@@ -24,15 +24,13 @@ class BookResource extends JsonResource
             'authors'               => AuthorResource::collection($this->whenLoaded('authors')),
         ];
         
-        // TODO include in base attrs arr,remove cast, check in frontend
         if ($this->purchases_sum_copies) {
-            $attrs['copies_purchased_in_month'] = (int) $this->purchases_sum_copies;
+            $attrs['copies_sold_in_month'] = (int) $this->purchases_sum_copies;
         }
-
-        $this->load('purchases'); // TODO: is this needed?
         
-        // TODO include in base attrs arr
-        $attrs['copies_purchased_in_total'] = $this->purchases->sum('copies');
+        if ($this->relationLoaded('purchases')) {
+            $attrs['copies_sold_in_total'] = $this->purchases->sum('copies');
+        }
 
         return $attrs;
     }

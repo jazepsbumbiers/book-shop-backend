@@ -34,7 +34,9 @@ class BookController extends Controller
                 });
         } 
         
-        $books = $books->orderByDesc('purchases_sum_copies')->get();
+        $books = $books
+            ->orderByDesc('purchases_sum_copies')
+            ->get();
 
         return response()->json(BookResource::collection($books));
     }
