@@ -40,4 +40,17 @@ class BookController extends Controller
 
         return response()->json(BookResource::collection($books));
     }
+
+    public function buy(Request $request): JsonResponse
+    {   
+        $bookId = (int) $request->query('bookId');
+        $copies = (int) $request->query('copies');
+
+        $book = Book::findOrFail($bookId);
+        $book->purchases()->create([
+            'copies' => $copies,
+        ]);
+
+        return response()->json();
+    }
 }
