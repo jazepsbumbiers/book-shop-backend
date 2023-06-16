@@ -28,9 +28,9 @@ class BookResource extends JsonResource
             $attrs['copies_sold_in_month'] = (int) $this->purchases_sum_copies;
         }
         
-        if ($this->relationLoaded('purchases')) {
-            $attrs['copies_sold_in_total'] = $this->purchases->sum('copies');
-        }
+        $this->load('purchases');
+        
+        $attrs['copies_sold_in_total'] = $this->purchases->sum('copies');
 
         return $attrs;
     }
