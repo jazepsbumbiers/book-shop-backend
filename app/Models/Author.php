@@ -18,14 +18,6 @@ class Author extends Model
         'surname',
     ];
 
-    /**
-     * @var array
-     */
-    protected $casts = [
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
-
     public function books(): BelongsToMany
     {
         return $this->belongsToMany(Book::class);

@@ -23,11 +23,23 @@ class BookFactory extends Factory
         ];
     }
     
+    /**
+     * @param float $minValue
+     * @param float $maxValue
+     * 
+     * @return float
+     */
     private static function generateRandomFloat(float $minValue, float $maxValue): float
     {
         return $minValue + mt_rand() / mt_getrandmax() * ($maxValue - $minValue);
     }
     
+    /**
+     * @param string $startDate
+     * @param string $endDate
+     * 
+     * @return string
+     */
     private static function generateRandomDate($startDate, $endDate): string
     {
         $min = strtotime($startDate);

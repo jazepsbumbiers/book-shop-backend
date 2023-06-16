@@ -16,14 +16,6 @@ class BookPurchase extends Model
     protected $fillable = [
         'copies',
     ];
-
-    /**
-     * @var array
-     */
-    protected $casts = [
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
    
     public function book(): BelongsTo
     {

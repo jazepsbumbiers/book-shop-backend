@@ -22,14 +22,6 @@ class Book extends Model
         'date_published',
     ];
 
-    /**
-     * @var array
-     */
-    protected $casts = [
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
-
     public function authors(): BelongsToMany
     {
         return $this->belongsToMany(Author::class);

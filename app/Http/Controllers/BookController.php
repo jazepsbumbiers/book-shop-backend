@@ -11,6 +11,11 @@ use Illuminate\Http\Request;
 
 class BookController extends Controller
 {
+    /**
+     * @param Request $request
+     * 
+     * @return JsonResponse
+     */
     public function index(Request $request): JsonResponse
     {
         $currentMonthStart = Carbon::now()->startOfMonth();
@@ -41,6 +46,11 @@ class BookController extends Controller
         return response()->json(BookResource::collection($books));
     }
 
+    /**
+     * @param Request $request
+     * 
+     * @return JsonResponse
+     */
     public function buy(Request $request): JsonResponse
     {   
         $bookId = (int) $request->query('bookId');
@@ -54,6 +64,11 @@ class BookController extends Controller
         return response()->json();
     }
 
+    /**
+     * @param Request $request
+     * 
+     * @return JsonResponse
+     */
     public function top10(Request $request): JsonResponse
     {   
         $books = Book::with('authors')
