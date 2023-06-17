@@ -71,21 +71,27 @@ class BookController extends Controller
      */
     public function top10(Request $request): JsonResponse
     {   
-        $books = Book::with('authors')
+        $query = Book::with('authors')
             ->withSum('purchases', 'copies')
             ->orderByDesc('purchases_sum_copies')
             ->limit(10);
 
+        $books = $query->get();
+
         $searchQuery = $request->query('query');
 
         if ($searchQuery) {
-            $books = $books
+            $books = $query
                 ->where('name', 'LIKE', "%{$searchQuery}%")
                 ->orWhereHas('authors', function (Builder $query) use ($searchQuery) {
                     $query->whereRaw("CONCAT(name, ' ', surname) LIKE ?", ["%{$searchQuery}%"]);
+                })
+                ->get()
+                ->filter(function (Book $book) use ($books) {
+                    return $books->contains($book);
                 });
         } 
         
-        return response()->json(BookResource::collection($books->get()));
+        return response()->json(BookResource::collection($books));
     }
 }
