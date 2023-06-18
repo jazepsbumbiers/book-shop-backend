@@ -4,13 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\BookResource;
 use App\Models\Book;
-use Carbon\Carbon;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use App\Services\BookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BookController extends Controller
 {
+    private BookService $bookService;
+
+    public function __construct()
+    {
+        $this->bookService = new BookService();
+    }
+
     /**
      * @param Request $request
      * 
@@ -18,30 +24,24 @@ class BookController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $currentMonthStart = Carbon::now()->startOfMonth();
-        $currentMonthEnd = Carbon::now()->endOfMonth();
-        
-        $books = Book::with(['authors', 'purchases'])
-            ->whereHas('purchases', function (Builder $query) use ($currentMonthStart, $currentMonthEnd) {
-                $query->whereBetween('created_at', [$currentMonthStart, $currentMonthEnd]);
-            })
-            ->withSum(['purchases' => function ($query) use ($currentMonthStart, $currentMonthEnd) {
-                $query->whereBetween('created_at', [$currentMonthStart, $currentMonthEnd]);
-            }], 'copies');
+        $this->bookService->setRelations(['authors', 'purchases']);
+        $this->bookService->setBooks();
+
+        $books = $this->bookService->getBooksPurchasedInCurrentMonth();
 
         $searchQuery = $request->query('query');
 
         if ($searchQuery) {
-            $books = $books
-                ->where('name', 'LIKE', "%{$searchQuery}%")
-                ->orWhereHas('authors', function (Builder $query) use ($searchQuery) {
-                    $query->whereRaw("CONCAT(name, ' ', surname) LIKE ?", ["%{$searchQuery}%"]);
-                });
+            $books = $this->bookService->applySearch($books, $searchQuery);
         } 
         
-        $books = $books
-            ->orderByDesc('purchases_sum_copies')
-            ->get();
+        try {
+            $books = $this->bookService->getBooksSortedWithLimit($books, 'purchases_sum_copies', 'DESC')->get();
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 500);
+        }
 
         return response()->json(BookResource::collection($books));
     }
@@ -56,10 +56,7 @@ class BookController extends Controller
         $bookId = (int) $request->query('bookId');
         $copies = (int) $request->query('copies');
 
-        $book = Book::findOrFail($bookId);
-        $book->purchases()->create([
-            'copies' => $copies,
-        ]);
+        $this->bookService->buyBook($bookId, $copies);
 
         return response()->json();
     }
@@ -71,27 +68,29 @@ class BookController extends Controller
      */
     public function top10(Request $request): JsonResponse
     {   
-        $query = Book::with('authors')
-            ->withSum('purchases', 'copies')
-            ->orderByDesc('purchases_sum_copies')
-            ->limit(10);
+        $this->bookService->setRelations(['authors']);
+        $this->bookService->setBooks();
 
-        $books = $query->get();
+        $books = $this->bookService->getPurchasesTotalSum($this->bookService->getBooks());
+
+        try {
+            $query = $this->bookService->getBooksSortedWithLimit($books, 'purchases_sum_copies', 'DESC', 10);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+
+        $top10Books = $query->get();
 
         $searchQuery = $request->query('query');
 
         if ($searchQuery) {
-            $books = $query
-                ->where('name', 'LIKE', "%{$searchQuery}%")
-                ->orWhereHas('authors', function (Builder $query) use ($searchQuery) {
-                    $query->whereRaw("CONCAT(name, ' ', surname) LIKE ?", ["%{$searchQuery}%"]);
-                })
+            $top10Books = $this->bookService->applySearch($query, $searchQuery)
                 ->get()
-                ->filter(function (Book $book) use ($books) {
-                    return $books->contains($book);
-                });
+                ->filter(fn (Book $book) => $top10Books->contains($book));
         } 
         
-        return response()->json(BookResource::collection($books));
+        return response()->json(BookResource::collection($top10Books));
     }
 }
