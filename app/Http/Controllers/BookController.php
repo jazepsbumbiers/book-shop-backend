@@ -56,9 +56,11 @@ class BookController extends Controller
         $bookId = (int) $request->query('bookId');
         $copies = (int) $request->query('copies');
 
-        $this->bookService->buyBook($bookId, $copies);
+        $book = $this->bookService->buyBook($bookId, $copies);
 
-        return response()->json();
+        $book->load(['authors', 'purchases']);
+
+        return response()->json(new BookResource($book));
     }
 
     /**

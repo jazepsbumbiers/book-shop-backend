@@ -69,7 +69,7 @@ class BookService
     public function getBooksPurchasedInPeriod(Carbon $start, Carbon $end, bool $getSum = true): Builder
     {
         $books = $this->books
-            ->whereHas('purchases', fn (Builder $query) => $query->whereBetween('created_at', [$start, $end]));
+            ->whereHas('purchases', fn (Builder $query) => $query->purchasedInPeriod($start, $end));
 
         if ($getSum) {
             $books = $this->getPurchasesSumInPeriod($books, $start, $end);
@@ -88,7 +88,7 @@ class BookService
     private function getPurchasesSumInPeriod(Builder $books, Carbon $start, Carbon $end): Builder
     {
         return $books
-            ->withSum(['purchases' => fn (Builder $query) => $query->whereBetween('created_at', [$start, $end])], 'copies');
+            ->withSum(['purchases' => fn (Builder $query) => $query->purchasedInPeriod($start, $end)], 'copies');
     }
 
     /**
@@ -143,13 +143,15 @@ class BookService
      * @param int $bookId
      * @param int $copies
      * 
-     * @return void
+     * @return Book
      */
-    public function buyBook(int $bookId, int $copies): void
+    public function buyBook(int $bookId, int $copies): Book
     {
         $book = Book::findOrFail($bookId);
         $book->purchases()->create([
             'copies' => $copies,
         ]);
+
+        return $book;
     }
 }

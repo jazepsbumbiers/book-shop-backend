@@ -20,5 +20,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::resource('books', BookController::class)->only(['index']);
-Route::get('/books/top-10', [BookController::class, 'top10'])->name('books.top10');
-Route::get('books/buy', [BookController::class, 'buy'])->name('books.buy');
+
+Route::group([
+    'prefix' => 'books',
+    'as' => 'books.',
+], function () {
+    Route::get('/top-10', [BookController::class, 'top10'])->name('top10');
+    Route::get('/buy', [BookController::class, 'buy'])->name('buy');
+});
